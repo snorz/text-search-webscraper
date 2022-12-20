@@ -20,7 +20,7 @@ The project is far from what can be called finished but it does contain some bas
 
 ## Requirements
 
-pip install Levenshtein
+pip install Levenshtein <br>
 pip install beautifulsoup4
 
 
