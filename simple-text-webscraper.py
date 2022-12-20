@@ -1,7 +1,6 @@
 #!/usr/bin/python3
 
 # imports
-
 import requests
 from bs4 import BeautifulSoup
 import re
@@ -13,17 +12,13 @@ arg_parser = argparse.ArgumentParser(description='Simple program to search for s
 arg_parser.add_argument('--url', '-u', type=str, help='Search one single url')
 arg_parser.add_argument('--file', '-f', help='File containing multiple urls seperated by newline')
 arg_parser.add_argument('--search', '-s', nargs='+', help='Search string or word', required=True)
-arg_parser.add_argument('--header', '-he', help='Use this to specify what headers to use in the site access')
+arg_parser.add_argument('--header', '-he', help='Use this to specify what headers to use in the site access', action="store_true")
 arg_parser.add_argument('--method', '-m', help='Specify what pattern matching option to use: 0-exact(default), 1-Levenhstein, 2-Jaro-Winkler', choices=range(0, 3),default=0, type=int)
 arg_parser.add_argument('--lev', '-l', help='Input the Levenshtein distance to be used; default=3', type=int, default=3)
 arg_parser.add_argument('--verbose', '-v', help='Set this option for extra output', action="store_true")
 arg_parser.add_argument('--jwDist', '-j', help='Send the threshold for using Jaro-Winkler between 0.00 and 1, default=0.80', default=0.80, type=float)
 
 args = arg_parser.parse_args()
-
-############ def to read from file
-#https://www.softwaretestinghelp.com/python/input-output-python-files/
-
 
 ###################################################
 ## Config variables
@@ -60,7 +55,7 @@ if args.verbose:
 else:
     verbose = None
 
-### Search method args-> variables
+## Search method args -> variables
 # 1 == Levenshtein
 lev_dist = args.lev
 
@@ -76,16 +71,20 @@ search_strings = []
 
 
 # set headers/user-agent to test differences
-headers = {}
-
+if args.header:
+    header = {'Accept-Language': 'ext/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8', 
+            'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64; rv:106.0) Gecko/20100101 Firefox/106.0'}
+else:
+    header = {}
 
 ###################################################
 ## Functions
+
 ### Get data from page
 def get_page(url):
-    res = requests.get(url) #headers=headers
+    res = requests.get(url,headers=header) #headers=headers
     if res.status_code == 200:
-        res = requests.get(url, headers=headers)
+        #res = requests.get(url, headers=headers)
         #lines = res.text.split('\n')
         # clean list of emtpy strings  
         #lines = ' '.join(lines).split()
@@ -106,7 +105,7 @@ def ret_exact(data, s_string):
     res = re.search(s_string, data, re.IGNORECASE)
     
     if res:
-        print(s_string)
+        #print(s_string)
         return ([s_string, res])
     else:
         return None
@@ -121,18 +120,22 @@ def ret_levenshtein(data, s_string):
         lev_dist_res = distance(word, s_string)
 
         if lev_dist_res <= lev_dist:
-            print(word)
+            #print(word)
             return ([word, lev_dist_res])
 
 ### Search with jaro winkler
+# the current implementation does only work with words
 def ret_jaro_winkler(data, s_string):
     
-    ret = jaro_winkler(s_string, data)
-    if ret >= jw_dist:
-        print(data)
-        print(ret)
-        print("")
-        return ([data, ret])
+    words = data.split(' ')
+    for word in words: 
+        ret = jaro_winkler(s_string, data)
+        if ret >= jw_dist:
+            #print(data)
+            #print(ret)
+            #print("")
+            return ([data, ret])
+    return None
 
 
 ### Input results from get-request and the search string
@@ -197,7 +200,9 @@ for item in url_list:
         results = search_text(data, search_strings, args.method)
 
         if results != False: # if res is found store to array
-            all_results.append([item, len(results)])
+            #all_results.append([item, len(results)])
+            all_results.append([item, results[0][0]])
+            #print(results)
         else:
             print("Search string not found...")
             
@@ -207,7 +212,7 @@ for item in url_list:
 
 print(all_results)
 
-print("")
+print("\n")
 print(".....Quitting.....")
 
 
